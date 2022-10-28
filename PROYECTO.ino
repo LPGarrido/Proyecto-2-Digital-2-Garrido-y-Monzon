@@ -21,23 +21,21 @@
 #include "driverlib/rom.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/timer.h"
-
 #include "bitmaps.h"
 #include "font.h"
 #include "lcd_registers.h"
-
+//*** Definir los pines ***
 #define PB1 PF_4
 #define PB2 PF_0
 #define LED PF_1
 #define LED2 PF_3
-
 #define LCD_RST PD_0
 #define LCD_CS PD_1
 #define LCD_RS PD_2
 #define LCD_WR PD_3
 #define LCD_RD PE_1
 int DPINS[] = {PB_0, PB_1, PB_2, PB_3, PB_4, PB_5, PB_6, PB_7};  
-
+//*** Variables ***
 int hola = 0;
 int BOT1 = 0;
 int BOT2 = 0;
@@ -75,7 +73,6 @@ bool b_UP = 0;
 bool b_DOWN = 0;
 bool b_LEFT = 0;
 bool b_RIGHT = 0;
-
 File myFile;
 
 //***************************************************************************************************************************************
@@ -94,7 +91,9 @@ void LCD_Print(String text, int x, int y, int fontSize, int color, int backgroun
 void LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned char bitmap[]);
 void LCD_Sprite(int x, int y, int width, int height, unsigned char bitmap[],int columns, int index, char flip, char offset);
 void Read_SD(void);
-
+//***************************************************************************************************************************************
+// Memoria Flash
+//***************************************************************************************************************************************
 extern uint8_t inicio[];
 //***************************************************************************************************************************************
 // Inicialización
@@ -102,8 +101,10 @@ extern uint8_t inicio[];
 void setup() {
   // Frecuencia de reloj (utiliza TivaWare)
   SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ);
+  // Serial
   Serial.begin(9600);
   Serial2.begin(9600);
+  // Pin Mode
   pinMode(PB1, INPUT_PULLUP);
   pinMode(PB2, INPUT_PULLUP);
   pinMode(LED, OUTPUT);
@@ -118,54 +119,6 @@ void setup() {
   // Inicialización de la pantalla
   LCD_Init();
   //LCD_Clear(0x9005);
-
-  // Referencia para colores RGB565: http://www.rinkydinkelectronics.com/calc_rgb565.php
-
-  // Pantalla es de 320x240 pixeles (si está configurada en horizontal)
-  // 320px = ancho 240px = alto
-  // Esquina superior izquierda (x,y) = (0,0)
-
-  // void Rect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int c);
-  //Rect(160, 120, 100, 50, 0xFFFF);
-  //Rect(160-50, 120-25, 100, 50, 0xF800);
-
-  //void FillRect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int c);
-  //FillRect(160-100, 120-50, 100, 50, 0x001F);
-  //FillRect(0, 239-15, 320, 15, 0x001F);
-
-  //void H_line(unsigned int x, unsigned int y, unsigned int l, unsigned int c);
-  //H_line (20, 120, 280, 0x07E0);
-  
-  //void V_line(unsigned int x, unsigned int y, unsigned int l, unsigned int c);
-  //V_line (160, 20, 200, 0xFFE0);
-
-  // void LCD_Print(String text, int x, int y, int fontSize, int color, int background);
-  // fontSize puede ser 1 ó 2. En "font.h" pueden ver los detalles
-  //String text1 = "Hola mundo!";
-  //LCD_Print(text1, 20, 120-16, 2, 0xffff, 0x0000);
-  //LCD_Print(text1, 20, 121, 1, 0xffff, 0x7BC0);
-
-//----------------------------------------------------------------
-
-  //LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned char bitmap[]);
-
-  //LCD_Bitmap(0,0,50,59,sonic);
-  //LCD_Bitmap((320/2)-25,(240/2)-30,50,59,sonic);
-
-  //LCD_Bitmap(0,0,54,61,sonic_face);
-  //LCD_Bitmap((320/2) - 27, (240/2) - 30,54,61,sonic_face);
-
-/*
-  // Cómo repetir imágenes? (Hacer texturas para fondos)
-  for(int x = 0; x <319; x+=24){
-    LCD_Bitmap(x, 240-24, 24, 24, tile);
-  }
-
- //LCD_Sprite(int x, int y, int width, int height, unsigned char bitmap[],int columns, int index, char flip, char offset);
- //LCD_Sprite(320/2 - 8, 240-24-32, 16, 32, mario_sprite, 3, 0, 0, 0);
-
-  //LCD_Print("Setup...",100,50,2,0x0000,0x05F9);
-  */
 
   while (!Serial) {
     ; // wait for serial port to connect. Needed for Leonardo only
@@ -186,6 +139,7 @@ void setup() {
   }
   Serial.println("initialization done.");
 
+  // Empezar con la imagen de brasil guardada de la SD
   myFile = SD.open("Brasil.txt");
   Read_SD();
   
@@ -193,7 +147,7 @@ void setup() {
 }
 
 //***************************************************************************************************************************************
-// Loop Infinito
+// Interrupciones botones de la tiva
 //***************************************************************************************************************************************
 
 void b1() {
@@ -220,9 +174,8 @@ void b2() {
 //***************************************************************************************************************************************
 void loop() {
   
-  entradaSerial = "";
-
-
+  entradaSerial = "";       // Limpiar lo recibido constantemente
+  // Cambios de modo por el boton 1
   if(BOT1 == 1){
     BOT1 = 0;
     bandera = 1;
@@ -237,7 +190,7 @@ void loop() {
       modo++;
     }
   }
-  
+  // Cambios de pais en el modo 2 o 3
   if(BOT2 == 1){
     BOT2 = 0;
     //bandera = 1;
@@ -265,6 +218,7 @@ void loop() {
     }
   }
 
+  // Si es el modo 3 o 4 imprimir el partido que es
   if((modo == 3)||(modo == 4)){
     if(J1_pais == 0){
       J1_ptxt = "BRA";
@@ -294,10 +248,11 @@ void loop() {
     LCD_Print(J1_ptxt+" VS "+J2_ptxt,20,200,2,0xFFFF,0x0567);
   }
 
-
+  // Modo 0 - Pantalla de inicio 
   if(modo == 0){
     if(bandera == 1){
       LCD_Clear(0x9005);
+      // Fondo
       LCD_Bitmap(0,0,320,240,inicio);
       bandera = 0;
       J1_goles = 0;
@@ -306,31 +261,43 @@ void loop() {
       myFile = SD.open("Brasil.txt");
       Read_SD();
     }
+    // Texto de inicio
     LCD_Print("Catar 2022",125,160,2,0xFFFF,0x9005);
     LCD_Print("Penales",125,176,2,0xFFFF,0x9005);
     LCD_Print("Presione para iniciar",130, 210, 1, 0xFFFF, 0x9005); 
   }
+  // Modo 1 - Selección de equipo jugador 1
   else if(modo == 1){
     if(bandera == 1){
+      // Limpia la pantalla
       LCD_Clear(0x9005);
       bandera = 0;
     }
+    // Texto
     LCD_Print("Seleccion equipo",20,50,2,0xFFFF,0x9005);
     LCD_Print("Jugador 1",20,67,2,0xFFFF,0x9005);
+    // Imprime la bandera del pais a seleccionar
     LCD_Bitmap(100, 100, 114, 80, data);
   }
+  // Modo 1 - Selección de equipo jugador 1
   else if(modo == 2){
     if(bandera == 1){
+      // Limpia la pantalla
       LCD_Clear(0x9005);
       bandera = 0;
     }
+    // Texto
     LCD_Print("Seleccion equipo",20,50,2,0xFFFF,0x9005);
     LCD_Print("Jugador 2",20,67,2,0xFFFF,0x9005);
+    // Imprime la bandera del pais a seleccionar
     LCD_Bitmap(100, 100, 114, 80, data);
   }
+  // Patear penal jugador 1
   else if(modo == 3){
     if(bandera == 1){
+      // Lo ejecuta 1 vez
       if(bandera_cambio == 1){
+        // Escenario
         LCD_Clear(0x0567);
         FillRect(0,75+60,320,3,0xFFFF);
         FillRect(0,75+60+46+3,320,3,0xFFFF);
@@ -338,9 +305,12 @@ void loop() {
       }
       bandera = 0;
       bandera2 = 1;
+      // Aumenta el penal
       P_J1++;
+      // Imprime que penal 
       LCD_Print("Penal "+String(P_J1)+" Jugador 1",15,20,2,0xFFFF,0x0567);
-      
+
+      // Conteo con milis
       tiempo = 10000;
       dtiempo_anterior = tiempo/1000;
       millisActual = millis();
@@ -349,13 +319,15 @@ void loop() {
     
     millisActual = millis();
     if ((millisActual-millisAnterior) >= 0){
+      // Conteo con milis cuando llega al tiempo
       if ((millisActual-millisAnterior) >= tiempo){
          millisAnterior = millisActual;
          LCD_Clear(0x0567);
          myFile = SD.open("G1.txt");
          Read_SD();
          LCD_Bitmap(140,150,174,73,data);
-         
+         // Imprime al jugador corriendo del pais correspondiente
+         // El jugador se va moviendo por el ciclo for
          for (int x = 0; x < 140-1-54; x++){
            if (3 > bandera3){
              bandera3++;
@@ -398,7 +370,7 @@ void loop() {
            } 
          }
           
-         
+         // Imprimir la secuencia del balon
          myFile = SD.open("G2.txt");
          Read_SD();
          LCD_Bitmap(140,150,174,73,data);
@@ -420,8 +392,9 @@ void loop() {
          myFile = SD.open("G8.txt");
          Read_SD();
          LCD_Bitmap(140,150,174,73,data);
-         //gol = 0;
-         
+
+         // Evalua si es gol o no gol
+         // GOL impime la secuencia del balon         
          if(gol == 1){
           myFile = SD.open("G9.txt");
           Read_SD();
@@ -435,10 +408,10 @@ void loop() {
           myFile = SD.open("G12.txt");
           Read_SD();
           LCD_Bitmap(140,150,174,73,data);
-          //LCD_Print("GOOOOL",15,20,2,0xFFFF,0x0567);
           FillRect(0, 50, 320, 30, 0xFFFF);
           myFile = SD.open("gool.txt");
           Read_SD();
+          // Animacion GOL moviendose
           for (int x = 0; x < 320-148; x++){
             delay(2);
             LCD_Bitmap(x, 50, 148, 30, data);
@@ -447,15 +420,16 @@ void loop() {
             delay(2);
             LCD_Bitmap(x, 50, 148, 30, data);
           }
-          J1_goles++;
-          //gol = 0;
+          J1_goles++; // Aumenta el contador de goles 
          }
+         // Si es NO GOL 
          else {
+          // Imprime secuencia no gol del balon
           myFile = SD.open("NG9.txt");
           Read_SD();
           LCD_Bitmap(140,150,174,73,data);
-          //LCD_Print("Fallaste",15,20,2,0xFFFF,0x0567);
           FillRect(0, 50, 320, 30, 0x3007);
+          // Muestra animacion no gol moviendose
           myFile = SD.open("nogol.txt");
           Read_SD();
           for (int x = 0; x < 320-148; x++){
@@ -466,12 +440,9 @@ void loop() {
             delay(2);
             LCD_Bitmap(x, 50, 148, 30, data);
           }
-          //gol = 1;
          }
-          
-         delay(2000);
-          
-         modo = 4;
+         delay(2000);   // tiempo de espera          
+         modo = 4;      // Cambio de modo
          LCD_Clear(0x0567);
          FillRect(0,75+60,320,3,0xFFFF);
          FillRect(0,75+60+46+3,320,3,0xFFFF);
@@ -479,12 +450,13 @@ void loop() {
          bandera2 = 0;
       }
     }
+    // Cambia cada 1s
     if (bandera2){
       if(dtiempo_actual != dtiempo_anterior){
         bandera_1s = !bandera_1s;
         dtiempo_anterior = dtiempo_actual;
       }
-      
+      // Imprime al futbolista y arquero de una manera
       if(bandera_1s == 0){
         myFile = SD.open("p1.txt");
         Read_SD();
@@ -503,6 +475,7 @@ void loop() {
           myFile = SD.open("TM1.txt");
         }
       }
+      // Cambia la manera para que se vea animacion
       else {
         myFile = SD.open("p2.txt");
         Read_SD();
@@ -522,15 +495,16 @@ void loop() {
       }
       Read_SD();
       LCD_Bitmap(50,75,100,114,data);
-  
+      // Muestra el tiempo restante
       dtiempo_actual = tiempo/1000-(millisActual-millisAnterior)/1000;
       LCD_Print("Tiempo restante = "+String(dtiempo_actual)+"    ",23,37,1,0xFFFF,0x0567);  
     }
     
   }
+  // El modo 4 es similar al modo 3 con la variante que ahora patea el Jugador 2 
+  // La variante es que cuando el J1 tiene 3 penales y el J2 cumple los 3 penales, el juego acaba y pasa al modo 5
   else if(modo == 4){
     if(bandera == 1){
-      //LCD_Clear(0x6DFC);
       bandera = 0;
       bandera2 = 1;
       P_J2++;
@@ -724,19 +698,25 @@ void loop() {
     }
     
   }
+  // Mostrar el ganador y el resultado
   else if(modo == 5){
     if(bandera == 1){
       LCD_Clear(0x9005);
+      // Si J1 tiene mas goles
       if(J1_goles > J2_goles){
+        // Campeon J1 y muestra el resultado
         pais = J1_pais;
         LCD_Print("CAMPEON "+J1_ptxt,100,140,2,0xFFFF,0x9005);
         LCD_Print(J1_ptxt+String(J1_goles)+"-"+String(J2_goles)+J2_ptxt,100,156,2,0xFFFF,0x9005);
       }
       else if(J2_goles > J1_goles){
+        // Si J1 tiene mas goles
         pais = J2_pais;
+        // Campeon J2 y muestra el resultado
         LCD_Print("CAMPEON "+J2_ptxt,100,140,2,0xFFFF,0x9005);
         LCD_Print(J1_ptxt+String(J1_goles)+"-"+String(J2_goles)+J2_ptxt,100,156,2,0xFFFF,0x9005);
       }
+      // Empate
       else{
         LCD_Print("EMPATE",100,140,2,0xFFFF,0x9005);
         LCD_Print(J1_ptxt+String(J1_goles)+"-"+String(J2_goles)+J2_ptxt,100,156,2,0xFFFF,0x9005);
@@ -744,7 +724,7 @@ void loop() {
       myFile = SD.open("Trof.txt");
       Read_SD();
       LCD_Bitmap(20, 45, 67, 150, data);
-
+      // Imprime bandera ganador
       if(J2_goles != J1_goles){
         if(pais == 0){
           myFile = SD.open("Brasil.txt");
@@ -766,7 +746,7 @@ void loop() {
       millisActual = millis();
       millisAnterior = millisActual;
     }
-    
+    // Tiempos
     tiempo = 10000;
     millisActual = millis();
     if ((millisActual-millisAnterior) >= 0){
@@ -780,14 +760,6 @@ void loop() {
   }
 
   
-
-  // H_line( coordenada x, cordenada y, longitud, color);
-  // V_line( coordenada x, cordenada y, longitud, color);
-  // Rect( coordenada x, cordenada y, ancho, alto, color);
-  // FillRect( coordenada x, cordenada y, ancho, alto, color);
-  // LCD_Print( texto, coordenada x, cordenada y, color, background) 
-  // LCD_Sprite(coordenada x, coordenada y, width, height, (Mario) bitmap[], columns, index, flip, offset) // index anim_frame = (x/5)%8
-
 }
 //***************************************************************************************************************************************
 // Función para inicializar LCD
@@ -1213,19 +1185,25 @@ void Read_SD(void){
     myFile.close();
   }
 }
+//***************************************************************************************************************************************
+// Serial Event
+//***************************************************************************************************************************************
 
 void serialEvent(){
   entradaSerial = "";
   while(Serial2.available()){
     char inChar = (char)Serial2.read();
+    // GOL
     if(inChar == 'B'){
       Serial.println("Que golazo"); 
       gol = 1;
     }
+    // NO GOL
     else if(inChar == 'A'){
       Serial.println("Que pena :(");      
       gol = 0;
     }
+    // JOYSTICK ARRIBA
     else if(inChar == 'U'){
       if(b_UP == 0){
         // Lo hace una sola vez
@@ -1235,6 +1213,7 @@ void serialEvent(){
         b_UP = 1;
       }
     }
+    // JOYSTICK ABAJO
     else if(inChar == 'D'){
       if(b_DOWN == 0){
         // Lo hace una sola vez
@@ -1247,6 +1226,7 @@ void serialEvent(){
         b_DOWN = 1;
       }
     }
+    // JOYSTICK IZQUIERDA
     else if(inChar == 'L'){
       if(b_LEFT == 0){
         // Lo hace una sola vez
@@ -1280,6 +1260,7 @@ void serialEvent(){
         b_LEFT = 1;
       }
     }
+    // JOYSTICK DERECHA
     else if(inChar == 'R'){
       if(b_RIGHT == 0){
         // Lo hace una sola vez
@@ -1299,7 +1280,7 @@ void serialEvent(){
       b_RIGHT = 0;
     }
     else{
-      Serial.println("NEL CUAZ");
+      Serial.println("El dato no es correcto");
     }
   }
 }
